@@ -7,6 +7,7 @@ from convert import convert_image, convert_name
 INPUT_DIR = 'input'
 OUTPUT_DIR = 'output'
 IMAGE_FORMAT = 'jpg'
+STATIC = 'static'
 
 app = Flask(__name__)
 CORS(app)                               # Allow CORS (Cross Origin Requests)
@@ -56,6 +57,58 @@ def upload():
     '''
 
 
+page_count = 0
+
+
+@app.route('/multiple', methods=['GET', 'POST'])
+def multiple():
+    if request.method == 'POST':
+        global page_count
+        uploaded_files = request.files.getlist("file[]")
+        print(uploaded_files)
+        page_name = "page_{}.html".format(page_count)
+        page_count += 1
+        page = '''
+        <!doctype html>
+        <head>
+        <style>
+        img {
+            height: 10%;
+            width: 10%;
+        }
+        </style>
+        </head>
+        <title>Converted Images</title>
+        <h1>Your images</h1>
+        <div style="">
+        '''
+        for file in uploaded_files:
+            filename = secure_filename(file.filename)
+            input_path = os.path.join(INPUT_DIR, filename)
+            file.save(input_path)
+            output_name = convert_name(filename, IMAGE_FORMAT)
+            output_path = os.path.join(OUTPUT_DIR, output_name)
+            convert_image(input_path, output_path)    
+            page = page + "<p>{}</p>".format(output_name)  
+            page = page + "<a href={}>".format(url_for(
+                'output',
+                path=output_name))  
+            page = page + "<img src={} title='{}'><br><br>".format(url_for(
+                'output',
+                path=output_name),
+                output_name)
+            page = page + "</a>"
+        page = page + "</div>"
+        page_path = os.path.join(OUTPUT_DIR, page_name)
+        with open(page_path, 'w') as f:
+            f.write(page)
+        return redirect(url_for(
+                'output',
+                path=page_name))
+
+    return send_from_directory(STATIC, 'multiple.html')
+
+
 def main(args):
     setup()
     app.run(
@@ -74,7 +127,7 @@ if(__name__ == "__main__"):
         '--port',
         help="Port that the server will run on.",
         type=int,
-        default=8002)
+        default=8008)
     parser.add_argument(
         '-d',
         '--debug',
