@@ -13,6 +13,12 @@ def convert_image(input_path, output_path):
     imageio.imsave(output_path, rgb)
 
 
+def convert_name(input_name, img_format):
+    name, sep, ext = input_name.rpartition(SEP)
+    output_name = name + sep + img_format
+    return output_name
+
+
 def convert_dir(input_dir, output_dir, img_format):
     if not os.path.exists(output_dir):
         os.mkdir(output_dir)
